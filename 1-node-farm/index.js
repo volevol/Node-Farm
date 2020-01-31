@@ -1,7 +1,8 @@
 const fs = require('fs');
 const http = require('http');
 const url = require('url');
-
+const fetch = require("node-fetch");
+const rp = require('request-promise');
 const replaceTemplate = require('./modules/replaceTemplate');
 
 //////////////////////////////////////////////////////////////
@@ -36,8 +37,18 @@ const tempOverview = fs.readFileSync(`${__dirname}/templates/template-overview.h
 const tempCard = fs.readFileSync(`${__dirname}/templates/template-card.html`, 'utf-8');
 const tempProduct = fs.readFileSync(`${__dirname}/templates/template-product.html`, 'utf-8');
 
-const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8');
-const dataObj = JSON.parse(data);
+const dataObj = rp('http://78.47.142.188:8000/news/list/2')
+  .then(function(html){
+    //success!
+    const data = html
+    console.log(data)
+    return data
+  })
+  .catch(function(err){
+    //handle error
+  });
+console.log(typeof(dataObj))
+
 
 const server = http.createServer((req, res) => {
     const {query, pathname} = url.parse(req.url, true);
@@ -46,7 +57,8 @@ const server = http.createServer((req, res) => {
     if (pathname === "/" || pathname === '/overview') {
         res.writeHead(200, {'Content-type': 'text/html'});
 
-        const cardsHtml = dataObj.map(el => replaceTemplate(tempCard, el)).join('');
+        const cardsHtml = dataObj.map(el => replaceTemplate(tempCard, el)).join(''); // вообще вот так должно быть, но ругается на .join()
+        // const cardsHtml = dataObj.map(el => replaceTemplate(tempCard, el));
         const output = tempOverview.replace('{%PRODUCT_CARDS%}', cardsHtml);
         res.end(output);
 
